@@ -23,10 +23,10 @@ public class Cliente {
             socket = new Socket("127.0.0.1",5001);
 
             new Recibiendo(socket).start();
-            new Enviando(socket).start();
+         //   new Enviando(socket).start();
 
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-            out.writeUTF("Hola soy el cliente");
+          //  DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+          //  out.writeUTF("Hola soy el cliente");
             while (sigue){
 
             }
@@ -51,45 +51,36 @@ public class Cliente {
         public Recibiendo(Socket sc) throws IOException {
 
             in = new DataInputStream(sc.getInputStream());
-            buffin = new BufferedInputStream( sc.getInputStream() );
+            buffin = new BufferedInputStream(sc.getInputStream() );
         }
 
         @Override
         public void run() {
             try {
                 while(loop) {
-                    if(in.readUTF().equals("TAM")){
-                        tam = in.readInt();
-                        System.out.println("Recibido tamaño");
+
+                    tam = in.readInt();
+                    System.out.println("Recibido tamaño "+tam);
+                    if(tam > 0){
+                        FileOutputStream fos = new FileOutputStream("Recibido"+contador+".wav");
+                        BufferedOutputStream buffout = new BufferedOutputStream(fos);
+
+
+                        byte[] buffer = new byte[tam];
+
+                        for( int i = 0; i < buffer.length; i++ )
+                        {
+                            buffer[i] = ( byte )buffin.read( );
+                        }
+                        System.out.println("Archivo recibido escrito");
+
+
+
+
+                        contador++;
 
                     }
 
-                    FileOutputStream fos = new FileOutputStream("Recibido"+contador+".wav");
-                    BufferedOutputStream buffout = new BufferedOutputStream( fos );
-
-
-                    // Creamos el array de bytes para leer los datos del archivo
-                    byte[] buffer = new byte[ tam ];
-
-                    // Obtenemos el archivo mediante la lectura de bytes enviados
-                    for( int i = 0; i < buffer.length; i++ )
-                    {
-                        buffer[ i ] = ( byte )buffin.read( );
-                    }
-                    System.out.println("llego");
-                    // Escribimos el archivo
-                    buffout.write( buffer );
-                    System.out.println("llego2");
-                    // Cerramos flujos
-                    buffout.flush();
-                    System.out.println("llego3");
-                    buffin.close();
-                    System.out.println("llego4");
-                    buffout.close();
-                    System.out.println("llego5");
-                    String res =in.readUTF();
-                    System.out.println(res);
-                    contador++;
                 }
             }catch (Exception e){}
         }

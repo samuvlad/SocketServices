@@ -70,7 +70,7 @@ public class Servidor{
 
                     tD.close();
 
-                    System.out.println("ARchivo "+f.getName() +" grabado");
+                    System.out.println("Archivo "+f.getName() +" grabado");
                 }
 
             }catch (Exception e){
@@ -143,34 +143,31 @@ public class Servidor{
                         archivo = new File("Grabacion"+contGrabados+".wav");
                         System.out.println("despues2");
                         tam = (int) archivo.length();
-                        out.writeUTF("TAM");
-                        System.out.println("despues3");
+                        System.out.println("tamaño "+tam);
                         out.writeInt(tam);
                         System.out.println("despues4");
 
                         FileInputStream fis = new FileInputStream(archivo.getName());
                         BufferedInputStream bis = new BufferedInputStream(fis);
 
-                        // Creamos el flujo de salida para enviar los datos del archivo en bytes
                         BufferedOutputStream bos = new BufferedOutputStream(socket.getOutputStream());
 
-                        // Creamos un array de tipo byte con el tamaño del archivo
                         byte[] buffer = new byte[tam];
 
-                        // Leemos el archivo y lo introducimos en el array de bytes
                         bis.read(buffer);
 
-                        // Realizamos el envio de los bytes que conforman el archivo
                         for (int i = 0; i < buffer.length; i++) {
                             bos.write(buffer[i]);
                         }
 
                         System.out.println("------------------------------Archivo Enviado: " + archivo.getName());
-                        // Cerramos socket y flujos
+                        fis.close();
                         bis.close();
-                        bos.close();
-                        out.writeUTF("Termino");
+
+
                         contGrabados++;
+
+
 
                     }
                 }catch (Exception e ){}
