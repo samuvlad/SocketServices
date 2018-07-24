@@ -121,54 +121,75 @@ public class Servidor{
 
         public class Enviando extends Thread{
 
-            DataOutputStream out;
+            ObjectOutputStream out;
             Socket sc;
-            private File archivo;
-            int tam;
-            int i = 0;
+            boolean enviadoUltimo=false;
+            boolean loop = true;
+            private int contador = 0;
+
 
             public Enviando(Socket sc) throws IOException {
                 this.sc = sc;
-                out = new DataOutputStream(sc.getOutputStream());
+                out = new ObjectOutputStream(sc.getOutputStream());
             }
 
             @Override
             public void run() {
                 try{
-                    while(true) {
 
-                        System.out.println("---------------------------------termine vuelvo a enviar antes 6 seg");
+                    while(loop) {
+
                         Thread.sleep(6000);
-                        System.out.println("despues1");
-                        archivo = new File("Grabacion"+contGrabados+".wav");
-                        System.out.println("despues2");
-                        tam = (int) archivo.length();
-                        System.out.println("tamaño "+tam);
-                        out.writeInt(tam);
-                        System.out.println("despues4");
+                        String nombre = "Grabacion"+contador+".wav";
+                        FileInputStream fis = new FileInputStream(nombre);
 
-                        FileInputStream fis = new FileInputStream(archivo.getName());
-                        BufferedInputStream bis = new BufferedInputStream(fis);
+// Se instancia y rellena un mensaje de envio de fichero
+                        Mensaje mensaje = new Mensaje();
+                        mensaje.nombreFichero = nombre;
 
-                        BufferedOutputStream bos = new BufferedOutputStream(socket.getOutputStream());
+// Se leen los primeros bytes del fichero en un campo del mensaje
+                        int leidos = fis.read(mensaje.contenidoFichero);
 
-                        byte[] buffer = new byte[tam];
+// Bucle mientras se vayan leyendo datos del fichero
+                        while (leidos > -1) {
+                            // Se rellena el número de bytes leidos
+                            mensaje.bytesValidos = leidos;
 
-                        bis.read(buffer);
+                            // Si no se han leido el máximo de bytes, es porque el fichero
+                            // se ha acabado y este es el último mensaje
+                            if (leidos < Mensaje.LONGITUD_MAXIMA) {
+                                // Se marca que este es el último mensaje
+                                mensaje.ultimoMensaje = true;
+                                enviadoUltimo = true;
+                            } else
+                                mensaje.ultimoMensaje = false;
 
-                        for (int i = 0; i < buffer.length; i++) {
-                            bos.write(buffer[i]);
+                            // Se envía por el socket
+                            out.writeObject(mensaje);
+
+                            // Si es el último mensaje, salimos del bucle.
+                            if (mensaje.ultimoMensaje)
+                                break;
+
+                            // Se crea un nuevo mensaje
+                            mensaje = new Mensaje();
+                            mensaje.nombreFichero = nombre;
+
+                            // y se leen sus bytes.
+                            leidos = fis.read(mensaje.contenidoFichero);
                         }
 
-                        System.out.println("------------------------------Archivo Enviado: " + archivo.getName());
-                        fis.close();
-                        bis.close();
+// En caso de que el fichero tenga justo un múltiplo de bytes de MensajeTomaFichero.LONGITUD_MAXIMA,
+// no se habrá enviado el mensaje marcado como último. Lo hacemos ahora.
+                        if (enviadoUltimo == false) {
+                            mensaje.ultimoMensaje = true;
+                            mensaje.bytesValidos = 0;
+                            out.writeObject(mensaje);
+                        }
+// Se cierra el ObjectOutputStream
 
-
-                        contGrabados++;
-
-
-
+                        System.out.println("Termino de enviar ");
+                        contador++;
                     }
                 }catch (Exception e ){}
             }

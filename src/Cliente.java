@@ -42,16 +42,16 @@ public class Cliente {
 
     public static class Recibiendo extends Thread{
 
-        DataInputStream in;
         private boolean loop = true;
-        private int tam;
-        private  BufferedInputStream buffin;
+        private FileOutputStream archivo;
+        private Mensaje mensajeRecibido;
+        private ObjectInputStream in;
         private int contador = 0;
 
         public Recibiendo(Socket sc) throws IOException {
 
-            in = new DataInputStream(sc.getInputStream());
-            buffin = new BufferedInputStream(sc.getInputStream() );
+            in = new ObjectInputStream(sc.getInputStream());
+
         }
 
         @Override
@@ -59,27 +59,34 @@ public class Cliente {
             try {
                 while(loop) {
 
-                    tam = in.readInt();
-                    System.out.println("Recibido tamaño "+tam);
-                    if(tam > 0){
-                        FileOutputStream fos = new FileOutputStream("Recibido"+contador+".wav");
-                        BufferedOutputStream buffout = new BufferedOutputStream(fos);
+                    archivo = new FileOutputStream("Recibido"+contador+".wav");
+                    contador++;
 
+                    do
+                    {
+                        // Se lee el mensaje en una variabla auxiliar
+                        Object mensajeAux = in.readObject();
 
-                        byte[] buffer = new byte[tam];
-
-                        for( int i = 0; i < buffer.length; i++ )
+                        // Si es del tipo esperado, se trata
+                        if (mensajeAux instanceof Mensaje)
                         {
-                            buffer[i] = ( byte )buffin.read( );
+                            mensajeRecibido = (Mensaje) mensajeAux;
+                            // Se escribe en pantalla y en el fichero
+                            System.out.print(new String(
+                                    mensajeRecibido.contenidoFichero, 0,
+                                    mensajeRecibido.bytesValidos));
+                            archivo.write(mensajeRecibido.contenidoFichero, 0,
+                                    mensajeRecibido.bytesValidos);
                         }
-                        System.out.println("Archivo recibido escrito");
-
-
-
-
-                        contador++;
-
-                    }
+                        else
+                        {
+                            // Si no es del tipo esperado, se marca error y se termina
+                            // el bucle
+                            System.err.println("Mensaje no esperado "
+                                    + mensajeAux.getClass().getName());
+                            break;
+                        }
+                    } while (!mensajeRecibido.ultimoMensaje);
 
                 }
             }catch (Exception e){}
